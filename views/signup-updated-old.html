@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Firebase Server Auth</title>
+    <link rel="stylesheet" href="./mvp.css" />
+    <style>
+        #loggedin-sec{
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section id="signup-sec">
+            <form id="signup">
+                <label>First Name</label>
+                <input type="text" name="name" />
+                <label>Last Name</label>
+                <input type="text" name="lastname" />
+                <label>Email</label>
+                <input type="text" name="email" />
+                <label>Password</label>
+                <input type="password" name="password" />
+                <button>Sign up</button>
+            </form>
+        </section>
+        <section id="loggedin-sec">
+            <h1>Your Logged In. Go to <a href="/profile">Profile</a></h1>
+
+
+        </section>
+
+        <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-auth.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/7.14.1/firebase-firestore.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+        <script>
+            const firebaseConfig = {
+                apiKey: "AIzaSyAwUQlCm_2b1-fOqP3npYjn8uyVw61Q3mo",
+                authDomain: "nodetask-3f111.firebaseapp.com",
+                databaseURL: "https://nodetask-3f111.firebaseio.com",
+                projectId: "nodetask-3f111",
+                storageBucket: "nodetask-3f111.appspot.com",
+                messagingSenderId: "802820142672",
+                appId: "1:802820142672:web:61c52ee6b7f44f262c4355",
+                measurementId: "G-YJRZKRMYG0"
+
+            };
+            // Initialize Firebase
+            firebase.initializeApp(firebaseConfig);
+
+            firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE)
+            db = firebase.firestore();
+
+
+            document
+                .getElementById("signup")
+                .addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    
+                    const name = event.target.name.value;
+                    const lastname = event.target.lastname.value;
+                    const email = event.target.email.value;
+                    const password = event.target.password.value;
+
+                    firebase
+                        .auth()
+                        .createUserWithEmailAndPassword(email, password)
+                        .then(({ user }) => {
+                            // console.log(user);
+                            // const bValueRef = db.collection('bValue').doc('Users');
+                            const bValueRef = db.collection('usersData');
+                            // console.log(user.uid);
+                            // console.log(lastname);
+                            const resValue  = bValueRef.add({
+                                uid: user.uid,
+                                name: name,
+                                lastname: lastname,
+                                email: email,
+                                password: password,
+                                role: 'user'
+                            });
+                            // console.log(resValue);
+                            // return false;
+                            
+                            const userLoginRes = user.getIdToken().then((idToken) => {
+                                return fetch("/sessionLogin", {
+                                    method: "POST",
+                                    headers: {
+                                        Accept: "application/json",
+                                        "Content-Type": "application/json",
+                                        "CSRF-Token": Cookies.get("XSRF-TOKEN"),
+                                    },
+                                    body: JSON.stringify({ idToken }),
+                                });
+                            }).then(()=>{
+                                return firebase.auth().signOut();
+                            }).then(()=>{
+                                window.location.assign("/profile")
+                            });
+                            
+                            
+                        });
+                    return false;
+                });
+        </script>
+    </main>
+</body>
+
+</html>
