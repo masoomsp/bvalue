@@ -1,6 +1,3 @@
 node_modules
 firebaseconfig.js
-.env
-index-err.js
-index-up-to-date-02-april-2023.js
-index-updated.js
+serviceAccount.json

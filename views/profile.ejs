@@ -61,6 +61,17 @@
     .shadow-none {
         box-shadow: none!important;
     }
+    ul.menu-bar li{
+      display: inline;
+      border: 1px solid #000;
+      padding:10px;
+      margin:5px;
+      border-radius: 5px;;
+      
+    }
+    ul.menu-bar li a{
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -82,6 +93,19 @@
               </ol>
             </nav> -->
             <!-- /Breadcrumb -->
+            <div class="row">
+              <div class="col-md-12">
+                <nav aria-label="breadcrumb" class="main-breadcrumb" style="text-align: right;">
+                  <ul class="menu-bar">
+                    <li class="border-info"><a href="/" class="text-info">Profile</a></li>
+                    <% if(userData.role == 'admin'){ %>
+                    <li class="border-info"><a href="/users" class="text-info">Users</a></li>
+                    <% } %>
+                    <li class="border-danger"><a href="/sessionLogout" class="text-danger">Logout</a></li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
       
             <div class="row gutters-sm">
               <div class="col-md-4 mb-3">
@@ -94,7 +118,9 @@
                         <p class="text-secondary mb-2"> <%= user.email %> </p>
                         <!-- <p class="text-muted font-size-sm">Bay Area, San Francisco, CA</p> -->
                         <a class="btn btn-danger" href="/sessionLogout">Logout</a>
-                        <!-- <button class="btn btn-outline-primary">Message</button> -->
+                        <% if(userData.role == 'admin'){ %>
+                        <a class="btn btn-outline-primary" href="/users">Users</a>
+                        <% } %>
                       </div>
                     </div>
                   </div>

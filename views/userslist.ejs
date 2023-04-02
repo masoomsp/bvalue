@@ -61,6 +61,17 @@
     .shadow-none {
         box-shadow: none!important;
     }
+    ul.menu-bar li{
+      display: inline;
+      border: 1px solid #000;
+      padding:10px;
+      margin:5px;
+      border-radius: 5px;;
+      
+    }
+    ul.menu-bar li a{
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -82,29 +93,51 @@
               </ol>
             </nav> -->
             <!-- /Breadcrumb -->
-      
+            <div class="row">
+              <div class="col-md-12">
+                <nav aria-label="breadcrumb" class="main-breadcrumb" style="text-align: right;">
+                  <ul class="menu-bar">
+                    <li class="border-info"><a href="/" class="text-info">Profile</a></li>
+                    <% if(userData.role == 'admin'){ %>
+                    <li class="border-info"><a href="/users" class="text-info">Users</a></li>
+                    <% } %>
+                    <li class="border-danger"><a href="/sessionLogout" class="text-danger">Logout</a></li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
             <div class="row gutters-sm">
               <div class="col-md-12">
-                <table>
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Sr#</th>
                             <th>Email</th>
                             <th>First Name</th>
                             <th>Last Name</th>
+                            <th>Role</td>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
+                      <% for(i=0; i<users.length; i++){%>
                         <tr>
-                            <td>1</td>
-                            <td>Johndoe@gmail.com</td>
-                            <td>John</td>
-                            <td>Doe</td>
-                            <td><button class="btn btn-sm btn-primary">Edit</button> <button class="btn btn-sm btn-danger">Delete</button> </td>
+                            <td><%= i+1 %></td>
+                            <td><%= users[i].email %></td>
+                            <td><%= users[i].name %></td>
+                            <td><%= users[i].lastname %></td>
+                            <td><%= users[i].role %></td>
+                            <td>
+                              <a class="btn btn-sm btn-primary" href="/userprofile/edit/<%= users[i].id %>">Edit</a>
+                              <a class="btn btn-sm btn-danger" href="/userprofile/delete/<%= users[i].id %>">Delete</a>
+                            </td>
                         </tr>
+                        <% } %>
                     </tbody>
                 </table>
+                
+                    
+                
               </div>
             </div>
   
@@ -129,32 +162,6 @@
         };
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-
-        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
-        db = firebase.firestore();
-            document
-                .getElementById("user_edit")
-                .addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    
-                    const uid = event.target.uid.value;
-                    const name = event.target.name.value;
-                    const lastname = event.target.lastname.value;
-                    const email = event.target.email.value;
-
-                    const data = {
-                        'uid':uid,
-                        'name':name,
-                        'lastname':lastname,
-                        'email':email
-                    }
-
-                    db.collection('UsersData').doc(uid).update(data)
-                    .then(() => {
-                        window.location.assign("/");
-                    }); 
-                    return false;
-                });
 
       </script>
    </main>
