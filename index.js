@@ -75,7 +75,7 @@ app.get("/", function (req, res) {
     // res.render("index.html");
     // res.render("profile.html");
     const sessionCookie = req.cookies.session || "";
-    // console.log(req);
+    res.send(req.cookies);
     admin
       .auth()
       .verifySessionCookie(sessionCookie, true /** checkRevoked */)
