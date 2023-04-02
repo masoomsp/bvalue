@@ -1,17 +1,17 @@
 const cookieParser = require("cookie-parser");
+
 const bodyParser = require("body-parser");
 const csrf = require("csurf");
 const express = require("express");
-
 const admin = require("firebase-admin");
+
+
 const serviceAccount = require("./serviceAccount.json");
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://nodetask-3f111.firebaseio.com",
 });
-
-const {UsersData, firebase, db_firestore} = require('./firebaseconfig.js');
-firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE)
 
 const csrfMiddleware = csrf({ cookie: true });
 
@@ -26,118 +26,11 @@ app.use(cookieParser());
 app.use(csrfMiddleware);
 
 const db = admin.firestore();
-
 app.all("*", (req, res, next) => {
   res.cookie("XSRF-TOKEN", req.csrfToken());
   next();
 });
-app.post("/login", async (req, res) => {
-  // console.log(req.body);
-  const email = req.body.login;
-  const password = req.body.password;
-  const csrfCookie = req.body.csrfCookie.toString();
-  firebase.auth().signInWithEmailAndPassword(email, password)
-  .then(({ user }) => {
-    user.getIdToken().then(async (idToken) => {
-      const expiresIn = 60 * 60 * 24 * 5 * 1000;
-      admin.auth().createSessionCookie(idToken, { expiresIn })
-      .then(
-        (sessionCookie) => {
-          
-          const options = { maxAge: expiresIn, httpOnly: true };
-          res.cookie("session", sessionCookie, options);
-          res.cookie("user", user, options);
-          res.end(JSON.stringify({ status: "success" }));
-        },
-        (error) => {
-          res.status(401).send("UNAUTHORIZED REQUEST!");
-        }
-      );
-      
-    });
-    
-  })
-  .then(() => {
-    firebase.auth().signOut();
-  })
-  .catch((error) => {
-    console.log('login error');
-    console.log(error);
-  });
-})
-app.post("/signup", async (req, res) => {
-  // console.log(req.body);
-  const name = req.body.name;
-  const lastname = req.body.lastname;
-  const email = req.body.email;
-  const password = req.body.password;
-  const csrfCookie = req.body.csrfCookie.toString();
 
-  firebase.auth().createUserWithEmailAndPassword(email, password)
-  .then(({user})=>{
-    db.collection('UsersData').doc(user.uid).set({
-        uid: user.uid,
-        name: name,
-        lastname: lastname,
-        email: email,
-        password: password,
-        role: 'user'
-    })
-    .then(() => {
-      const userLoginRes =  user.getIdToken().then((idToken) => {
-        const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        admin.auth().createSessionCookie(idToken, { expiresIn })
-        .then(
-          (sessionCookie) => {
-            
-            const options = { maxAge: expiresIn, httpOnly: true };
-            res.cookie("session", sessionCookie, options);
-            res.cookie("user", user, options);
-            res.end(JSON.stringify({ status: "success" }));
-          },
-          (error) => {
-            res.status(401).send("UNAUTHORIZED REQUEST!");
-          }
-        );
-      })
-      .then(() => {
-          return firebase.auth().signOut();
-      });
-    });
-        
-  })
-  .catch((error) => {
-    console.log('signuo error');
-    console.log(error);
-  });
-
-})
-app.post("/profile/update", async (req, res) => {
-  // console.log(req.body);
-  const data = req.body.uData;
-  db.collection('UsersData').doc(data.uid).update(data)
-  .then(() => {
-    res.redirect('/');
-  })
-  .catch((error) => {
-    console.log('profile update error');
-    console.log(error);
-  });
-
-})
-app.post("/user/update", async (req, res) => {
-  // console.log(req.body);
-  const data = req.body.uData;
-  db.collection('UsersData').doc(data.uid).update(data)
-  .then(() => {
-    res.redirect('/users');
-  })
-  .catch((error) => {
-    console.log('User update error');
-    console.log(error);
-  });
-
-})
 app.post("/sessionLogin", (req, res) => {
     const idToken = req.body.idToken.toString();
     var user = req.body.user;
@@ -160,6 +53,26 @@ app.post("/sessionLogin", (req, res) => {
       );
 });
 
+app.post("/user/update", async (req, res) => {
+  const sessionCookie = req.cookies.session || "";
+  const userCookie = req.cookies.user || "";
+  const uid = req.body.uid;
+  const data = req.body;
+  admin
+    .auth()
+    .verifySessionCookie(sessionCookie, true /** checkRevoked */)
+    .then(async () => {
+      const userID = uid;
+      await db.collection('UsersData').doc(userID).update(data)
+      .then(() => {
+        res.redirect("/")
+      });
+      
+    })
+    .catch((error) => {
+      res.redirect("/login");
+    });
+});
 
 app.get("/sessionLogout", (req, res) => {
     res.clearCookie("session");
@@ -167,6 +80,7 @@ app.get("/sessionLogout", (req, res) => {
 });
 
 app.get("/", async function (req, res) {
+    // res.render("index.html");
     // res.send(req);
     const sessionCookie = req.cookies.session || "";
     const userCookie = req.cookies.user || "";
@@ -183,10 +97,12 @@ app.get("/", async function (req, res) {
         const userData = userDataSnap.data();
         // console.log(userData);
         res.render("profile.ejs",{user: userCookie, userData: userData});
+        // res.render("profile.html",{user: userCookie});
       })
       .catch((error) => {
         res.redirect("/login");
       });
+    // res.render("profile.html");
 });
 
 app.get("/login", function (req, res) {
@@ -200,8 +116,9 @@ app.get("/login", function (req, res) {
         res.redirect("/");
       })
       .catch((error) => {
-        res.render("login.ejs");
+        res.render("login.html");
       });
+    // res.render("login.html");
 });
 
 app.get("/signup", function (req, res) {
@@ -214,10 +131,11 @@ app.get("/signup", function (req, res) {
         res.redirect("/");
       })
       .catch((error) => {
-        res.render("signup.ejs");
+        res.render("signup.html");
       });
 });
-app.get("/profile/edit", async function (req, res) {
+app.get("/user/edit", async function (req, res) {
+  // res.render("index.html");
   
   const sessionCookie = req.cookies.session || "";
   const userCookie = req.cookies.user || "";
@@ -235,10 +153,12 @@ app.get("/profile/edit", async function (req, res) {
       // console.log(userData);
       
       res.render("profileedit.ejs",{user: userCookie, userData: userData});
+      // res.render("profile.html",{user: userCookie});
     })
     .catch((error) => {
       res.redirect("/login");
     });
+  // res.render("profile.html");
 });
 app.get("/users", async function (req, res) {
   // res.render("index.html");
@@ -278,6 +198,7 @@ app.get("/users", async function (req, res) {
 });
 
 app.get("/userprofile/edit/:id", async function (req, res) {
+  // res.render("index.html");
   
   const sessionCookie = req.cookies.session || "";
   const userCookie = req.cookies.user || "";
@@ -297,12 +218,15 @@ app.get("/userprofile/edit/:id", async function (req, res) {
       // console.log(userData);
       // res.send(userData);
       res.render("useredit.ejs",{user: userCookie, userData: userData});
+      // res.render("profile.html",{user: userCookie});
     })
     .catch((error) => {
       res.redirect("/login");
     });
+  // res.render("profile.html");
 });
 app.get("/userprofile/delete/:id", async function (req, res) {
+  // res.render("index.html");
   
   const sessionCookie = req.cookies.session || "";
   const userCookie = req.cookies.user || "";

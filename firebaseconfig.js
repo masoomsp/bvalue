@@ -15,4 +15,4 @@ const firebaseConfig = {
   firebase.initializeApp(firebaseConfig)
   const UsersData = firebase.firestore().collection("UsersData")
 
-  module.exports = {UsersData, firebase, auth_firebase}
+  module.exports = {UsersData, firebase, db_firestore}

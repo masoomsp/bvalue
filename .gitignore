@@ -1,1 +1,5 @@
 node_modules
+firebaseconfig.js
+serviceAccount.json
+views/login-final.html
+views/signup-final.html
